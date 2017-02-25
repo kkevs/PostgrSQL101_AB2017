@@ -1,0 +1,469 @@
+Merhaba sevgili Postgresciler 🙂
+
+PostgreSQL 101 eğitiminden öğrendiklerimi size anlatacağım. Başlamadan önce AB2017 nedir acaba diyen arkadaşlara ufacık bir açıklama -> Akademik Bilişim, İnternet Teknolojileri Derneği (İNETD) tarafından düzenlenen; akademik ortamlardaki bilgi teknolojileri konusunda çalışan ilgili grupları bir araya getirerek, bilgi teknolojileri altyapısı, kullanımı, eğitimi ve üretimini tüm boyutlarıyla tanıtmayı, tartışmayı, tecrübeleri paylaşmayı ve ortak politikalar oluşturmaya yardımcı olmayı amaçlayan ulusal bir konferanstır.4 günlük postgreSQL 101 eğitimi aldım. Dört günlük eğitimi bölümlere ayırarak anlatacağım birinci bölüme başlayalım 🙂
+
+PostgreSQL, veritabanları için ilişkisel modeli kullanan ve SQL standart sorgu dilini destekleyen bir veritabanı yönetim sistemidir. PostgreSQL aynı zamanda iyi performans veren, güvenli ve geniş özellikleri olan bir Veri Tabanı Yönetim Sistemidir. … PostgreSQL ücretsiz ve açık kodludur. Anlatım ve örnekleri denemek için pgadmin3’ü yüklemeyi unutmayın. Kurulumu çok basit olduğu için o kısmı size bırakıyorum 🙂
+
+Normalizasyon
+
+Normalizasyon(Ayrıştırma) veritabanlarında çok fazla sütun ve satırdan oluşan bir tabloyu tekrarlardan arındırmak için daha az satır ve sütun içeren alt kümelerine ayrıştırma işlemidir. Normalizasyonun iki temel amacı vardır. –Veri tabanında veri tekrarlarını ortadan kaldırmak ve
+
+–Veri tutarlılığını (Data Integrity) artırmak
+
+Normalizasyon çok önemli bir konudur.Hakan Özakar’ın dediği gibi
+
+Bakkal defteri ile veri tabanı arasındaki en temel fark: Normalizasyon…
+
+Linki inceleyiniz : http://beltslib.net/veri-tabanlarinda-normalizasyon.html
+
+Aşağıdaki başlıkları inceleyelim
+
+CREATE DROP ALTER TRUNCATE
+
+CREATE [ [ GLOBAL | LOCAL ] { TEMPORARY | TEMP } | UNLOGGED ] ** **TABLE[ IF NOT EXISTS ] table_name ( [** **{ column_name data_type [ COLLATE collation ] [ column_constraint [ ... ] ] | table_constraint | LIKE parent_table [ like_option ... ] } [, ... ] ] ) Bir tane tablo oluşturalım tbl_kisi adında id ve ad tutacağımız bir tablo oluşturduk serial diyerek otomatik artıracak kendini 🙂
+
+CREATE TABLE tbl_kisi( id SERIAL, ad VARCHAR(50) NOT NULL, ) tabloda tutacağımız özellikleri artırabiliriz
+
+CREATE TABLE tb_kisi ( id SERIAL, ad VARCHAR(50) NOT NULL, soyad VARCHAR(50) NOT NULL, dogum_tarihi DATE, email VARCHAR(70) NOT NULL, aktif BOOLEAN DEFAULT true NOT NULL, CONSTRAINT tb_kisi_email_key UNIQUE(email), CONSTRAINT tb_kisi_pkey PRIMARY KEY(id) )
+
+DROP
+
+DROP TABLE [ IF EXISTS ] name [, ...] [ CASCADE | RESTRICT ] DROP TABLE veritabanından tabloları kaldırır. Bir tabloyu sadece sahibi kaldırabilir. Tabloyu kaldırmadan sadece satırlarını boşaltmak istiyorsanız DELETE kullanın. DROP TABLE daima hedef tablonun içerdiği indeksleri, kuralları, tetikleri ve kısıtları kaldıracaktır. Yine de, bir sanal tablo ya da başka bir tablodaki bir yabancı anahtar tarafından başvurulan bir tabloyu kaldırabilmek için CASCADE belirtilmelidir. (CASCADE bağımlı bir sanal tabloyu tamamen kaldıracak, fakat yabancı anahtar için diğer tablodan sadece yabancı anahtar kısıtını kaldıracaktır.) isim
+
+Kaldırılacak tablonun ismi (şema nitelemeli olabilir). CASCADE
+
+Tabloya bağımlı nesnelerin de (sanal tablolar gibi) silinmesini sağlar. RESTRICT
+
+Tabloya bağımlı nesneler varsa tablonun kaldırılmasını engeller. Bu öntanımlıdır. DROP TABLE tbl_kisi
+
+Alter Table – tabloda değişilik yaptırır
+
+ALTER TABLE [ ONLY ] isim [ * ] eylem [, ... ] ALTER TABLE [ ONLY ] isim [ * ] RENAME [ COLUMN ] sütun TO yeni_sütun ALTER TABLE isim RENAME TO yeni_isim
+
+eylem şunlardan biri olabilir:
+
+** ADD [ COLUMN ] sütun tür [ sütun_kısıtı [ ... ] ]** DROP [ COLUMN ] sütun [ RESTRICT | CASCADE ] ALTER [ COLUMN ] sütun TYPE tür [ USING ifade ] ALTER [ COLUMN ] sütun SET DEFAULT ifade ALTER [ COLUMN ] sütun DROP DEFAULT ALTER [ COLUMN ] sütun { SET | DROP } NOT NULL ALTER [ COLUMN ] sütun SET STATISTICS tamsayı ALTER [ COLUMN ] sütun SET STORAGE { PLAIN | EXTERNAL | EXTENDED | MAIN } ADD tablo_kısıtı DROP CONSTRAINT kısıt_ismi [ RESTRICT | CASCADE ] CLUSTER ON indeks_ismi SET WITHOUT CLUSTER SET WITHOUT OIDS OWNER TO yeni_aidiyet SET TABLESPACE tabloalanı_ismi
+
+ALTER TABLE distributors ADD COLUMN address varchar(30); --yeni column ekle ALTER TABLE distributors RENAME COLUMN address TO city; --column adını değiştir
+
+*Truncate *
+
+Tabloyu boşaltır.Delete farkı ne o zaman?? Delete yapıldığında fiziksel tamamen bir silme olmaz flagleme yapar yeni satır eklendiğinde bir sonraki idye ekler. Truncate siler drop+create işlemi yapar.
+
+TRUNCATE [ TABLE ] [ ONLY ] name [ * ] [, ... ] [ RESTART IDENTITY | CONTINUE IDENTITY ] [ CASCADE | RESTRICT ]
+
+Schema
+
+Bir şema , tabloların adlandırılmış bir koleksiyonudur. Dosyaları klasörlemeye benzetebiliriz (söz dizimi)
+
+Veritabanı . Şema . Tablo PostgreSQL deyimi CREATE SCHEMA bir şema oluşturur.
+
+CREATE SCHEMA myschema;
+
+Veri Tipleri
+
+Veri Bütünlüğü ve Kısıtlar
+
+Constraints Check Constraints Not-Null Constraints ** *Unique Constraints * *Primary Keys * **Foreign Keys
+
+Check Constraints --Kontrolü sağlar, kısıtlama belirleyebilir
+
+CREATE TABLE products ( product_no integer, name text, price numeric CONSTRAINT positive_price CHECK (price > 0) );
+
+Not-Null Constraints –boş bırakma
+
+CREATE TABLE products ( product_no integer NOT NULL, name text NOT NULL, price numeric NOT NULL CHECK (price > 0) );
+
+Unique Constraints –mail örneği canlansın aynı mailden kayıta izin yok
+
+CREATE TABLE products ( product_no integer CONSTRAINT must_be_different UNIQUE, name text, price numeric);
+
+Primary Keys –unique+notnull
+
+CREATE TABLE products ( product_no integer PRIMARY KEY, name text, price numeric );
+
+Foreign Keys
+
+Hangi kolonun hangi topla ile ilişkili olduğunu sağlamaya çalışıyor
+
+CREATE TABLE products ( product_no integer PRIMARY KEY, name text, price numeric );
+
+CREATE TABLE orders ( order_id integer PRIMARY KEY, shipping_address text, ... );
+
+CREATE TABLE order_items ( product_no integer REFERENCES products, order_id integer REFERENCES orders, quantity integer, PRIMARY KEY (product_no, order_id) );
+
+DDL (Data Definition Language)
+
+Veri Tanımlama Dili (DDL) deyimleri tabloları, veritabanı yapısını veya şemaları tanımlamak için kullanılır.
+
+Bunlardan bazıları;
+
+–CREATE – Veri tabanındaki nesneleri oluşturmak için kullanılır.
+
+–ALTER – Veri tabanı nesnelerinin yapısını değiştirmek için kullanılır.
+
+–DROP – Veri tabanındaki nesneleri silmek ya da başka bir ifadeyle ilgili nesneleri bütünüyle kaldırmak için kullanılır.
+
+–TRUNCATE – Kayıtlar için ayrılan tüm boşluklar dahil, bir tablodaki tüm kayıtları kaldırılır
+
+–COMMENT – Veri sözlüğüne yorum eklemek için kullanılır.
+
+–RENAME – Bir nesneyi yeniden adlandırmak için kullanılır.
+
+DCL (Data Control Language)
+
+Veri Kontrol Dili (DCL) deyimleri yetkilendirme ya da ayrıcalıkları belirlemek için kullanılır.
+
+Bunlardan bazıları;
+
+–GRANT – Belirli bir kullanıcı ya da gruba veri tabanının belirtilen nesnelerine erişim ayrıcalıklarını verir.
+
+–REVOKE – GRANT komutu ile verilen ayrıcalıkların bir kısmını ya da tümünü geri almak için kullanılır.
+
+TCL (Transaction Control)
+
+İşlem Kontrol (TCL) deyimleri, DML ifadeleri tarafından yapılan değişiklikleri yönetmek için kullanılır.
+
+Bunlardan bazıları;
+
+–COMMIT – Yapılanları kalıcı hale getirir. İşin tamamlanmasını sağlar.
+
+–SAVEPOINT – Daha sonra geri dönülecek bir dönüş noktası belirler.
+
+–ROLLBACK – Son COMMIT’e kadar olan yeri geri alır
+
+DML – Data Manipulation Language (Veri Düzenleme Dili)
+
+INSERT – ekleme UPDATE – guncelleme DELETE – silme INSERT INTO tablo_adi (sutun_1, sutun_2) VALUES (deger1, deger2) UPDATE tablo_adi SET yeni_bilgiler WHERE koşullar DELETE FROM tablo_adi WHERE kosullar;
+
+SQL’e Giriş (Structured Query Language)
+
+Select Insert Update Delete SELECT
+
+SELECT * FROM tablo_ismi;
+
+ALIAS KULLANMAK
+
+AS ifedesi ile uzun ve kullanımı zor olan tablo veya alan adlarına geçici olarak kısa isimler vererek bunları kodlamalarımızda kullanabiliriz. Böylece mevcut tablo yapımız bozmadan anlık olarak belirlediğimiz isimleri kullanabiliriz.
+
+select k.ad,k.soyad,k.dogum_yeri, from oim.tb_kisi as l ** **where k.id = 1 ; GROUP BY – HAVING
+
+GROUP BY fonksiyonu ile belli alanlara göre gruplama yapılır.
+
+SELECT select_list FROM ... [WHERE ...] GROUP BY grouping_column_reference [, grouping_column_reference]... select dogum_yeri, ad from oim.tb_kisi as k where k.dogum_yeri='Ankara' ** *group by 1,2 * **--Yukarıdaki 1,2 dogum_yeri ve adı temsil ediyor aşağıya sorguyu uzun uzun yazmak yerine kolay HAVING yapısı temelde WHERE ile aynı görevi yapmaktadır. GROUP BY ile kullanılır.
+
+Where ifadesi ile belirtilen kriter Group By uygulanmadan önce geçerli olurken, Having ifadesi ile belirtilen kriter ise group by uygulandıktan sonra ortaya çıkan verileri filtrelemek için kullanılır.
+
+Ayrıca Where ifadesinden sonra sum, avg gibi fonksiyonlar kullanılamazken, Having ile kullanılabilir.
+
+SELECT select_list FROM ... ** *[WHERE ...] * **GROUP BY ... HAVING boolean_expression select k.dogum_yeri,count (*) from oim.tb_kisi as k where k.dogum_yeri <> 'Ankara' group by 1 *having count() > 1 **
+
+ORDER BY
+
+ORDER BY ifadesi kayıtları belirtilen alanda, ASC (ascending) parametresi ile küçükten büyüğe, DESC (descending) parametresi ile büyükten küçüğe göre sıralar. Burada sadece sayısal alanlar değil metinsel alanlarda alfabetik olarak sıralanabilir.
+
+ORDER BY expression [ ASC | DESC | USING operator ] [ NULLS { FIRST | LAST } ] [, ...] SELECT * FROM Customers ORDER BY Country DESC;
+
+BETWEEN
+
+Between operatörü ile bir alanda belirtilen aralıktaki değerleri aramak için kullanılır.
+
+BETWEEN bir operatördür ve WHERE ile kullanılır.
+
+SELECT * FROM Products WHERE Price BETWEEN 10 AND 20;
+
+IN/NOT IN
+
+IN operatörü belirtilen tek bir alanda birden fazla değeri aramak için kullanılır.
+
+SELECT * FROM Customers WHERE City IN ('Paris','London');
+
+LIMIT VE TOP
+
+SELECT TOP 2 * FROM Musteri; // Müşteri tablosunun ilk 2 kaydını getirir. SELECT *** **FROM Personel LIMIT 5; // Baştan ilk 5 kaydı çeker. SELECT *** **FROM Personel LIMIT 10,5; // 10. kayıttan itibaren 5 kayıt çeker. // 11,12,13,14,15 inci sıradaki kayıtlar.
+
+DISTINCT
+
+DISTINCT ifadesi tablodaki belirtilen alanda bulunan kayıtlardan birer örnek alır. Yani tekrar eden kayıtlardan bir tane alır ve bunun yanına da tekrar etmeyen kayıtları koyarak bir veri kümesi oluşturur.
+
+SELECT DISTINCT (location) location, time, report FROM weather_reports ORDER BY location, time DESC;
+
+Fonksiyonlar
+
+Mathematical Functions abs,random,round Aggregate Functions count,sum,max String Functions lower, substring, trim Data Type Formatting Functions to_char, to_number Date/Time Functions now, extract, date_part Sequence Manipulation Functions nextval Array Functions array_to_string, array_length
+
+Operatorler
+
+Logical Operatorler(Mantık Operatörleri) AND, OR, NOT Karşılaştırma Operatorleri <, >, <=, =, != Matematiksel Operatorler +, -, *** **String Operatorleri à || *Date/Time Operatorleri +, -, ** Aşağıya öğrendiklerinizi uygulamanız için örnekleri koyuyorum. Tek tek açıklamasını yapmadım. Uygulayıp görün 🙂
+
+select * from oim.tb_ders ** *select * from oim.tb_ders_ogretmen * *select * from oim.tb_kisi_tipi * *select * from oim.tb_ogrenci_ders * **select * from oim.tb_kisi --Yukarıdaki tabloları oluşturun içinede veri ekleyerek denemelere başlayın :) select dogum_yeri from oim.tb_kisi as k where k.dogum_yeri='Ankara' AND k.ad='KEVSER' group by k.dogum_yeri,k.ad,k.soyad
+
+select dogum_yeri, ad from oim.tb_kisi as k where k.dogum_yeri='Ankara' ** *group by 1,2 * **--Yukarıdaki 1,2 dogum_yeri ve adı temsil ediyor aşağıya sorguyu uzun uzun yazmak yerine kolay
+
+select dogum_yeri, count(*) from oim.tb_kisi as k where k.dogum_yeri='Ankara' ** **group by 1
+
+select dogum_yeri, count(*) from oim.tb_kisi as k --where k.dogum_yeri='Ankara' ** **group by 1 --where sorgusunu kaldırdığımızda tüm illlerin kaçar tane olduğunu görürüz
+
+select dogum_yeri, count(*) from oim.tb_kisi as k where k.dogum_yeri <> 'Ankara' -- esit değildir <> demek group by 1 having count(*)>1
+
+--aşağıdaki tarihten daha büyük Select k.dogum_tarihi From oim.tb_kisi k where k.dogum_tarihi>'1993-12-31'
+
+Select k.* from oim.tb_kisi k where k.ad like 'Ahmet'
+
+Select k.* from oim.tb_kisi k where k.ad like 'Ahmet%'
+
+Select k.* from oim.tb_kisi k where k.ad ilike '%ahmet%' --ilek büyük küçük karakter önemsemezzz
+
+Select k.soyad from oim.tb_kisi k where k.soyad not ilike '%a%' --soyadında a geçmeyenlerr
+
+Select k.dogum_tarihi from oim.tb_kisi k where k.dogum_tarihi>='1992-12-31' and k.dogum_tarihi<='1995-12-31'
+
+veya betweenle yapımı
+
+where k.dogum_tarihi BETWEEN '1992-12-31' and '1995-12-31'
+
+Select k.id from oim.tb_kisi k where k.id=6 or k.id=12 or k.id=16
+
+veya
+
+Select k.id from oim.tb_kisi k where k.id in (6,12,16)
+
+Select k.* from oim.tb_kisi k where k.id in (6,12,16,17,18) order by k.ad,k.soyad --ada göre sıraladık
+
+Select k.* from oim.tb_kisi k where k.id in (1,2,6,12,16,17,18) order by k.ad DESC,k.soyad --adı tam tersi sıralandı
+
+Select k.* from oim.tb_kisi k order by k.dogum_tarihi, k.id DESC --dogum tarihini sırala idleri tam ters, sırala
+
+Notlar:
+
+Sql sorguların bazıları açıklamalı bazıları açıklamasız eğer gerçek manada öğreneyim diyorsanız denemeler yapıp bu deneme sonuçlarını kendiniz görmelisiniz ama anlaşılmayan yerleri tabiki mail yoluyla yada yorum bırakarak sorabilirsiniz. Birinci bölümde en alta aşağıdaki tabloları çeken sorguları koymuştuk bunlara bir kısa açıklama getiriyorum. Kurs esnasında bir örnek yapalım bu da oim(öğrenci isleri modulü) bizim schemamızın adıydı söz diziliminde bahsetmiştik veritabanı.şema.tablo diye oradan kafanız karışmasın klasörlemek gibi demiştik. Siz sorgulara göre column ve veri ekleyebilirsiniz. Yada bir örnek veri üzerinden benzer sorguları çalıştırabilirsiniz. Kolay gelsin 🙂 select * from oim.tb_ders ** *select * from oim.tb_ders_ogretmen * *select * from oim.tb_kisi_tipi * *select * from oim.tb_ogrenci_ders * **select * from oim.tb_kisi
+
+Şimdi devam ediyoruz…
+
+Join
+
+INNER JOİN OUTER JOİN CROSS-JOIN Join işlemleri hep kafamı karıştırmıştır taki bu görsele kadar gördüm aydınlandım resmen 🙂 Örneklerde anlayamadığınız durumlarda görsele tekrar tekrar bakın. Sorguları deneyin veri seti bulamadıysanız -> https://www.w3schools.com/sql/sql_join.asp linkinde denemeleri görebilirsiniz..
+
+join
+
+Şimdi tek tek ele alalım ->
+
+JOIN / INNER JOIN
+
+SELECT column_name(s) FROM table1 INNER JOIN table2 ON table1.column_name=table2.column_name;
+
+veya
+
+SELECT column_name(s) FROM table1 JOIN table2 ON table1.column_name=table2.column_name; –tb_kisi’de id olarak gösterilen kisi tipinin karşılığını gösterdik
+
+select k.ad,k.soyad,kt.tanim ** *from oim.tb_kisi k * *join oim.tb_kisi_tipi kt * **on k.kisi_tipi_id=kt.id *LEFT JOİN – RİGHT JOİN *
+
+Left ve right joinlerde yukarıdaki görsele bakarsak daha iyi kavrarız. Yok rigth nasıldı left nasıldı düşünmeyin öğrenin LEFT JOİN’i tabloları yazarken yer değiştirin olsun bitisin 🙂
+
+SELECT column_name(s) FROM table1 LEFT JOIN table2 --RIGHT join için left yerine right ON table1.column_name=table2.column_name;
+
+veya
+
+SELECT column_name(s) FROM table1 LEFT OUTER JOIN table2 --RIGHT join için left yerine right ON table1.column_name=table2.column_name; SELECT Customers.CustomerName, Orders.OrderID FROM Customers JOIN Orders ON Customers.CustomerID=Orders.CustomerID ORDER BY Customers.CustomerName; –İki sorgu arasındaki fark ne? JOİN yaptığımızda ortak olanlar gelir ama LEFT de sol tarafın kapsadığı ve ortaklar ama karşılığı olmayan sutunlar çıkar ve null atanır
+
+SELECT Customers.CustomerName, Orders.OrderID FROM Customers LEFT JOIN Orders ON Customers.CustomerID=Orders.CustomerID ORDER BY Customers.CustomerName; FULL JOİN
+
+SELECT column_name(s) FROM table1 FULL OUTER JOIN table2 ON table1.column_name=table2.column_name;
+
+SQL UNION Kullanımı
+
+UNION ile iki adet tablomuzdaki seçeceğimiz alanları birleştirerek tek bir tablo alanıymış gibi kullanabiliriz. Union ile iki tablodaki alanlar birleştirilirken tekrarlayan kayıtlar bir defa alınır. Eğer tekrarlayan kayıtların alınması isteniyorsa UNION ALL kullanılmalıdır.
+
+SELECT alan_ad(lari) FROM tablo1 UNION ALL SELECT alan_ad(lari) FROM tablo2 SELECT alan_ad(lari) FROM tablo1 UNION SELECT alan_ad(lari) FROM tablo2 not:
+
+explain ->sorgunun yürütme planını gösterir –> https://www.postgresql.org/docs/9.3/static/sql-explain.html
+
+EXPLAIN [ ( option [, ...] ) ] statement EXPLAIN [ ANALYZE ] [ VERBOSE ] statement
+
+where option can be one of:
+
+**ANALYZE [ boolean ]**
+**VERBOSE [ boolean ]**
+**COSTS [ boolean ]**
+**BUFFERS [ boolean ]**
+**TIMING [ boolean ]**
+**FORMAT { TEXT | XML | JSON | YAML }**
+select * from oim.tb_ders_ogretmen dog join oim.tb_ders d on d.id=dog.ders_id
+
+explain select * from oim.tb_ders_ogretmen dog join oim.tb_ders d on d.id=dog.ders_id ** **--Sorguyu yürütmez,Zaman göstermez,Tahmini maliyet gösterir. explain analyze select * from oim.tb_ders_ogretmen dog join oim.tb_ders d on d.id=dog.ders_id ** **--Sorguyu yürütür,Zaman gösterir.
+
+not: SELECT INTO ifadesi ile bir tablodaki verileri alıp yeni bir tablo oluşturup içine kopyalayabiliriz. Sonuçta veritabanında yeni bir tablo oluşturulacağı için veritabanı üzerinde işlem yapan kullanıcının yeni bir tablo oluşturma yetkisine sahip olması gerekmektedir.
+
+SELECT alan_ad(lari) INTO yeni_tablo_adi [IN hedef_database] ** **FROM tablo1 Yeni oluşturacağımız tablo aynı veritabanı içindeyse [IN hedef_database] ifadesi kullanılmaz. Farklı bir veritabanı içine kopyasını alacaksak o zaman IN operatörü ile hedef veritabanını belirtmemiz gerekir.
+
+Mevcut tablomuzdaki alanlar veri tipleri ve içindeki verilerle birlikte aynen kopyalanır. Eğer alan adını mevcut isminden farklı bir isimle oluşturmak istersek o zaman AS yapısı kullanabiliriz.
+
+SELECT id, ad_soyad AS isim, yasadigi_sehir AS sehir ** *INTO personel_yedek * **FROM personel CREATE [ OR REPLACE ] FUNCTION
+
+CREATE [OR REPLACE] FUNCTION function_name (arguments) ** **RETURNS return_datatype AS $variable_name$ DECLARE declaration; [...] BEGIN < function_body > [...] RETURN { variable_name | value } END; LANGUAGE plpgsql; Örnek
+
+CREATE OR REPLACE FUNCTION totalRecords () RETURNS integer AS $total$ declare total integer; BEGIN SELECT count(*) into total FROM COMPANY; RETURN total; END; $total$ LANGUAGE plpgsql; CREATE FUNCTION oim.sp_ders_ortalama_hesapla(IN i_ders_ogretmen_id smallint) ** **RETURNS numeric AS $BODY$ declare l_sonuc numeric(4,2); begin select (sum(final)/count(*))::numeric(4,2) into l_sonuc from oim.tb_ogrenci_ders dog ** **where dog.ders_ogretmen_id=i_ders_ogretmen_id;
+
+INSERT INTO oim.tb_ortalama(ders_ogretmen_id, ortalama) VALUES (i_ders_ogretmen_id, l_sonuc);
+
+return l_sonuc; end;$BODY$ LANGUAGE plpgsql VOLATILE NOT LEAKPROOF;
+
+Stored Procedure
+
+PL / pgSQL PostgreSQL veritabanı sistemi için yüklenebilir bir prosedürel dildir. Fonksiyonları ve trigger prosedürlerini oluşturmak için kullanılabilir SQL dili kontrol yapılarını ekler Karmaşık hesaplamaları yapabilir Tüm kullanıcı tanımlı türleri, işlevler ve operatörleri devralır(inherit eder) Sunucu tarafından güvenilir olarak tanımlanabilir PL / PgSQL Kullanmanın Avantajları
+
+SQL dilini, PostgreSQL ve diğer birçok ilişkisel veritabanlarında sorgu dili olarak kullanabilmeyi sağlar. Taşınabilir ve öğrenmesi kolaydır. Fakat her SQL deyimi veritabanı sunucusu tarafından ayrı ayrı yürütülmelidir. (Ayrı bir transaction açar ve ayrı yürütülür.) İçersinde program kontrol deyimleri, LOOP, WHILE, IF, EXIT ve gelişmiş hata denetimi özellikleri mevcuttur. Blok bazlı yapıdadır, kolay anlaşılır ve yazılır. Veritabanına gömülüdür ve onun parçasıdır Veritabanının çalıştığı tüm platformlarda çalışır. Platform bağımsızdır. Veritabanının üzerinde çalıştığı için network yükünüzü azaltır. Veritabanı üzerindeki tüm veri tipleri ile uyumluluk gösterir. Oracle PL/SQL diline yazılım kuralları açısından çok benzer. Bu geçişkenliği artırır. Bir PL/pgSQL fonksiyonu sonucunda tek bir değer dönmek zorunda değildir. Birden fazla dönüş olacaksa output parametre tanımı kullanılmalıdır. Bunun dışında fonksiyonlar,
+
+Basit tipte bir veri dönebilir; Record tipinde composit bir data dönebilir; Sonuç tablosunun pointer’ı gibi tek bir instance dönebilir. Hatta bazen hiç değer dönmeyebilir. Hiç bir değer dönmüyor ise fonksiyonun sonunda sadece “return” ya da “return void” denilebilir . PL / pgSQL Yapısı
+
+Blok bazlı yapıdadır, kolay anlaşılır ve yazılır. Tanımlaması aşağıdaki gibidir. DECLARE ** **Declarations (Tanımlamalar) BEGIN Statements (Çalıştırılacak Kodlar) END; Bütün alt bloklar END’ den önce sonlanmalıdır. Fonksiyon oluşturmak için gerekli olan tanımlama aşağıdaki gibidir. CREATE [OR REPLACE] FUNCTION fonksiyon_adı (parametre tipi) RETURNS dönüs_turu AS $$degisken_Adi DECLARE tanımlamalar; BEGIN komutlar; ** **[RETURN] [çıktı değeri;] END; ** **$$ LANGUAGE plpgsql; ÖRN:
+
+CREATE FUNCTION topla(integer,integer) ** **RETURNS integer AS $$ DECLARE l_sonuc; BEGIN l_sonuc:= + ; RETURN l_sonuc; END; $$ LANGUAGE plpgsql; Fonksiyonu çağırmak için: SELECT fonksiyon_adi (parametre değerleri);
+
+PERFORM fonksiyon_adi (parametre değerleri); İpucu: PERFORM ile kullanımda fonksiyon bir değer döndürmez.
+
+Yorumlar (Comments)
+
+Programlama dillerinin yorum yapısına benzemektedir. Bunun için pl/pgsql de 2 yol vardır.
+
+Tek satırlı yorumlar
+
+İki çizgi ile (–) başlarlar, satır sonu karakteri barındırmazlar. Blok yorumlar (çok satırlı yorumlar)
+
+Blok yorumlar /* ile başlarlar ve birden fazla satır içerirler. */ ile biter.
+
+Değişkenler (Variables)
+
+CONSTANT anahtar kelimesi sabit değer belirtir. NOT NULL anahtar kelimesi değişkenin NULL olamayacağını belirtir. DEFAULT anahtar kelimesi değişkene ön tanımlı bir değer atar. DECLARE Değişken_adı [ CONSTANT ] veri_tipi [NOT NULL] [{ DEFAULT | := } değer ]; BEGIN ÖRN:
+
+quantity integer DEFAULT 63; url varchar := 'http://mvrprime.com'; user_id CONSTANT integer := 17;
+
+Fonksiyon Parametreleri (Function Parameters)
+
+IN OUT INOUT VARIADIC InOut Parametre tipi, Hem veri girişi hem veri çıkışında kullanılır. Değeri alt program içerisinde set edilebilir ve program sonlandığında sahip olduğu son değeri dışarıya döndürür.
+
+ÖRN:
+
+CREATE OR REPLACE FUNCTION kare(INOUT integer a) AS $$ BEGIN a:= $a + $a; END; VARIADIC parametre tipi, Aynı veri türüne sahip tüm argümanları bir dizi (array) olarak fonksiyonda kullanmaya yarar.
+
+SQL SELECT INTO Kullanımı
+
+Select sorgusu neticesinde elde edilen sonuç row tipinde değişkene, record’a veya birden fazla değişkene(virgülle ayrılmış listeye) atanabilir. Kullanımı:
+
+SELECT select_ifadeleri INTO [STRICT] target FROM ...; ÖRN:
+
+DECLARE kayit RECORD; BEGIN SELECT INTO kayit * FROM kullanici WHERE kullanici_id = 7; IF kayit.homepage IS NULL THEN RETURN 'https://kevserkose.wordpress.com/'; END IF; END; Burda yazdıklarım size sadece bir pencere açar deneyip örnekler çözmek anlamanızı sağlar.
+
+Ayrıntı için https://www.postgresql.org/docs/9.2/static/plpgsql.html
+
+VİEW
+
+Viewler saklanmış sorgular olarak adlandırılabilirler. Sanal tablolardır fiziksel olarak yokturlar. Her çağrıldıklarında sorgu tekrar çalışır. Birçok amaç için kullanmak mümkündür. Karmaşık veritabanlarında verilere daha rahat ulaşmak Sanalda olsa bir Normalizasyon yapmak için kullanıla bilirler. View oluşturma için CREATE VIEW konutu kullanılır.
+
+KULLANIMI
+
+CREATE [ OR REPLACE ] [ TEMP | TEMPORARY ] [ RECURSIVE ] VIEW name [ ( column_name [, ...] ) ] [ WITH ( view_option_name [= view_option_value] [, ... ] ) ] ** **AS query [ WITH [ CASCADED | LOCAL ] CHECK OPTION ] CREATE VIEW public.view1 ( ** *) * *AS * **SELECT ;--yapılması istediğiniz query yazılır view kullanımı güzel ve işlevlidir :) ÖRN.
+
+CREATE VIEW oim.vw_ogrenci AS SELECT 'Ahmet DENİZ';
+
+CREATE VIEW oim.vw_ogrenci AS SELECT 'AHMET DENİZ'::Varchar(20) AS ogrenci;
+
+Select * from oim.vw_ogrenci CREATE OR REPLACE VIEW oim.vw_kisi ( id, kisi_tipi_id, ad, soyad, dogum_tarihi, dogum_yeri, kisi_tipi ) AS SELECT k.id, k.kisi_tipi_id, k.ad, k.soyad, k.dogum_tarihi, k.dogum_yeri, kt.tanim FROM oim.tb_kisi k ** **join oim.tb_kisi_tipi kt on kt.id = k.kisi_tipi_id ÖRN:
+
+CREATE VIEW oim.vw_ogrenci_dersler as SELECT k.id, kt.tanim kis_tipi, k.ad, k.soyad, k.dogum_tarihi, k.dogum_yeri, d.ders_adi, d.ders_saati, od.final, od.vize, og.acildigi_tarih, ** **ko.ad || ' '|| ko.soyad as ogretmen FROM oim.tb_kisi k join oim.tb_kisi_tipi kt on kt.id = k.kisi_tipi_id join oim.tb_ogrenci_ders od on od.kisi_id = k.id join oim.tb_ders_ogretmen og on og.id = od.ders_ogretmen_id join oim.tb_kisi ko on ko.id = og.kisi_id join oim.tb_ders d on d.id = og.ders_id
+
+MATERIALIZED VIEW OLUŞTURMAK
+
+Nedir bu materialized view?? CREATE MATERYALIZED VIEW , sorgunun somutlaştırılmış bir görünümünü tanımlar. Sorgu yürütüldüğünde ve komutun verildiği anda ( WITH NO DATA kullanılmadığında) görünümü doldurmak için kullanılır ve daha sonra REFRESH MATERIALIZED VIEW kullanılarak yenilenebilir .
+
+CREATE MATERIALIZED VIEW ** **CREATE MATERIALIZED VIEW oim.vw_ogrenci_dersler_sabit as SELECT k.id, kt.tanim kis_tipi, k.ad, k.soyad, k.dogum_tarihi, k.dogum_yeri, d.ders_adi, d.ders_saati, od.final, od.vize, og.acildigi_tarih, ** **ko.ad || ' '|| ko.soyad as ogretmen --Burda yapılan iki string columnu birleştirir ogretmen altında FROM oim.tb_kisi k join oim.tb_kisi_tipi kt on kt.id = k.kisi_tipi_id join oim.tb_ogrenci_ders od on od.kisi_id = k.id join oim.tb_ders_ogretmen og on og.id = od.ders_ogretmen_id join oim.tb_kisi ko on ko.id = og.kisi_id join oim.tb_ders d on d.id = og.ders_id Select * from oim.vw_ogrenci_dersler_sabit Select * from oim.vw_ogrenci_dersler REFRESH MATERIALIZED VIEW oim.vw_ogrenci_dersler_sabit; Konularla ilgili örnekler /* örnekler sonundaki nota dikkar 🙂 */
+
+Select * from oim.tb_kisi k *JOIN oim.tb_ogrenci_ders ogr_ders ON ogr_ders.id=k.id *
+
+Select o.*,k.ad,k.soyad from oim.tb_ogrenci_ders o JOIN oim.tb_ders_ogretmen a ON a.id = o.ders_ogretmen_id JOIN oim.tb_kisi k ON k.id=a.kisi_id
+
+Select o.*,k.ad,k.soyad,k.kisi_tipi_id from oim.tb_ogrenci_ders o JOIN oim.tb_ders_ogretmen a ON a.id = o.ders_ogretmen_id JOIN oim.tb_kisi k ON k.id=a.kisi_id JOIN oim.tb_kisi_tipi kt ON k.kisi_tipi_id =kt.id where kt.id=1 --kt.tanim='ogretmen'
+
+SELECT * from oim.tb_kisi k JOIN oim.tb_kisi_tipi kt ON k.kisi_tipi_id =kt.id where kt.id=1
+
+*--ogrenciderslerden ogrenciye bağla kisiid uzerinden *
+
+select * from oim.tb_ogrenci_ders a JOIN oim.tb_kisi k ON k.id=a.id where a.vize<=50
+
+select * from oim.tb_ogrenci_ders a JOIN oim.tb_kisi k ON k.id=a.id where (a.vize+a.final)/2<=50
+
+SELECT k.ad,k.soyad,kt.tanim from oim.tb_kisi_tipi kt JOIN oim.tb_kisi k ON kt.id=k.kisi_tipi_id
+
+not:explain query çalıştırma şekli var sayfalar arasındaki joinleri gösteriyor. ** **Bu kamut yardımıyla iyileştirmeler yapılabilir
+
+select * from oim.tb_ders_ogretmen dog join oim.tb_ders d on d.id=dog.ders_id
+
+explain select * from oim.tb_ders_ogretmen dog join oim.tb_ders d on d.id=dog.ders_id
+
+explain analyze select * from oim.tb_ders_ogretmen dog join oim.tb_ders d on d.id=dog.ders_id
+
+CREATE OR REPLACE FUNCTION oim.sp_carpma(i_birinci bigint, i_ikinci bigint)
+
+RETURNS bigint AS *$BODY$begin *
+
+return i_birinci*i_ikinci;
+
+end;$BODY$
+
+LANGUAGE plpgsql VOLATILE COST 100;
+
+ALTER FUNCTION oim.sp_carpma(bigint, bigint) OWNER TO postgres;
+
+select oim.sp_carpma(4,5) --bu şekilde fonk parametre gönderdik
+
+select sum(final), count() from oim.tb_ogrenci_ders dog * **where dog.ders_ogretmen_id=1
+
+--finalleri toplayıp topladığı kadar ogrenci sayısını veriyor
+
+select sum(final), count(), sum(final)/count() as ortalama from oim.tb_ogrenci_ders dog ** **where dog.ders_ogretmen_id=1
+
+select sum(final), count(), (sum(final)/count())::numeric(4,2) as ortalama from oim.tb_ogrenci_ders dog ** **where dog.ders_ogretmen_id=1
+
+CREATE FUNCTION oim.sp_ders_ortalama_hesapla(IN i_ders_ogretmen_id smallint) RETURNS numeric AS *$BODY$declare *
+
+l_sonuc numeric(4,2);
+
+begin
+
+select (sum(final)/count(*))::numeric(4,2) into l_sonuc from oim.tb_ogrenci_ders dog ** **where dog.ders_ogretmen_id=i_ders_ogretmen_id;
+
+INSERT INTO oim.tb_ortalama( ders_ogretmen_id, ortalama) VALUES (i_ders_ogretmen_id, l_sonuc);
+
+return l_sonuc;
+
+end;$BODY$ LANGUAGE plpgsql VOLATILE NOT LEAKPROOF;
+
+--yeni ogrenci gelebilir yada herhangi bir durumunda değişen güncellemelere göre trigger yazma
+
+CREATE FUNCTION oim.sp_ders_ortalama_guncelle() RETURNS trigger AS $BODY$begin ** *if (TG_OP = 'DELETE') then * **perform oim.sp_ders_ortalama_hesapla(old.ders_ogretmen_id); return OLD; elsif (TG_OP='UPDATE') THEN ** **perform oim.sp_ders_ortalama_hesapla(new.ders_ogretmen_id); return NEW; elsif(TG_OP='INSERT') THEN perform oim.sp_ders_ortalama_hesapla(new.ders_ogretmen_id); RETURN NEW; END IF; RETURN NULL; END;$BODY$ LANGUAGE plpgsql VOLATILE NOT LEAKPROOF;
+
+CREATE TRIGGER trg_ders_ortalama_guncelle
+
+AFTER INSERT OR UPDATE OR DELETE
+
+ON oim.tb_ogrenci_ders
+
+FOR EACH ROW EXECUTE PROCEDURE oim.sp_ders_ortalama_guncelle();
+
+test edelim ortalama tablosunda değişiklik yapılınca tablo yeni ortalama verecek mi??
+
+UPDATE oim.tb_ogrenci_ders SET final=98 WHERE id=1; --güncellledik
+
+*select * from oim.tb_ortalama --yeni ortalama *
+
+view
+
+CREATE VIEW oim.vw_kisi ** *AS * *SELECT k.,kt.tanim from oim.tb_kisi k join oim.tb_kisi_tipi kt on kt.id=k.kisi_tipi_id;
+
+CREATE OR REPLACE VIEW oim.vw_kisi( --replace düzenlemeye yarar varsa duzenlee id, kisi_tipi_id, ad, soyad, dogum_tarihi, dogum_yeri, tanim) AS SELECT k.id, k.kisi_tipi_id, k.ad, k.soyad, k.dogum_tarihi, k.dogum_yeri, kt.tanim FROM oim.tb_kisi k JOIN oim.tb_kisi_tipi kt ON kt.id = k.kisi_tipi_id;
+
+a.ad || ' ' || a.soyad as ogretmen -- iki sutunu birleştirip bir sutunda göstermek join oim.tb_kisi a on a.id=og.kisi_id
+
+Notların sonuna şükürler olsun geldik.Yasin TATAR, Ahmet FİNCAN, Fatih ALA AB2017 PostgreSQL-101 hocalarımıza çok teşekkür ediyorum. Benim aklımda hem efendikleri hemde bilgileriyle kaldılar. Dört günlük süreç gerçekten dolu dolu geçti. İnşAllah yollarımızı tekrar kesişir 🙂
+
+Sevgili postgresciler sevgiyle kalın 🙂
